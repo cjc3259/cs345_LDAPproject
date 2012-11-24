@@ -370,7 +370,7 @@ public class PyTuple extends PySequenceList implements List {
         array = new PyObject[temp.length];
         System.arraycopy(temp, 0, array, 0, temp.length);
     }
-
+	
     //prolog constructor
     public Prolog tupro;
 
@@ -543,15 +543,169 @@ public class PyTuple extends PySequenceList implements List {
     			url = url1;
     		conn = createConnection(uname, pword, url);
     		stmt = conn.createStatement();
-
     		System.out.println("Checking mode to determine which code to use.");
     		if (mode.equals("SIM")) {                                                      // SIM PROCESSING
     			String sparql = parseSIM(elements, sqlstrings, server, uname, pword, ctype, conn);
     			if ( ! sparql.equals(""))
     				runAndOutputTuples(sparql, stmt);
     		}
-    		else if (mode.equals("SPARQL")) {
+    		else if (mode.equals("LDAP")){
+                System.out.println(sqlstrings);
+                // String[] strings = sqlstrings.split(";");
+                String testsqlstrings = "ADD dc = com ou = check test = sejfhsdf ou : Michael email : megmailcom sfesg : mang uher : skjefisjeifjsh ;";
+                ArrayList<String> stringList = new ArrayList<String>();
+                String[] LDAPstringsArray = testsqlstrings.split(" ");
+                ArrayList<String> LDAPstrings = new ArrayList(Arrays.asList(LDAPstringsArray));
+                ArrayList<String> LDAPcolumn = new ArrayList<String>();
+                ArrayList<String> LDAPvalue = new ArrayList<String>();
+                System.out.println(LDAPstrings.get(0));
+                System.out.println(LDAPstrings.get(0).equals("ADD"));
+                if(LDAPstrings.get(0).equals("ADD"))
+                {
+                    stringList.add("INSERT");
+                    stringList.add("INTO");
+                    stringList.add("SQL_TEST");
+                
 
+                    LDAPstrings.remove(0);
+
+                    while(!LDAPstrings.get(0).equals(";"))
+                    {
+                        // System.out.println(LDAPstrings.get(0));
+                        // System.out.println(LDAPstrings.get(1));
+                        // System.out.println(LDAPstrings.get(2));
+                        LDAPcolumn.add(LDAPstrings.get(0));
+                        LDAPvalue.add(LDAPstrings.get(2));
+                        LDAPstrings.remove(0);
+                        LDAPstrings.remove(0);
+                        LDAPstrings.remove(0);
+                    }
+
+                    String LDAPcol = "(";
+                    
+                    for(int i = 0; i < LDAPcolumn.size() - 1; i++)
+                    {
+                        LDAPcol += LDAPcolumn.get(i) + ", ";
+                    }
+                    LDAPcol += LDAPcolumn.get(LDAPcolumn.size() - 1) + ")";
+                    System.out.println(LDAPcol);
+                    stringList.add(LDAPcol);
+                    stringList.add("VALUES");
+
+                    String LDAPval = "(";
+                    for(int i = 0; i < LDAPvalue.size() - 1; i++)
+                    {
+                        LDAPval += " '" + LDAPvalue.get(i) + "' ,";
+                    }
+                    LDAPval += " '" + LDAPvalue.get(LDAPvalue.size() - 1) + "' )";
+                    System.out.println(LDAPval);
+                    stringList.add(LDAPval);
+                    stringList.add(";");
+                }
+                String[] strings = stringList.toArray(new String[stringList.size()]);
+                int size = Math.max(strings.length - 1, elements.length);
+                //Parsing the SQL statement into one string
+                String sqlstmt = new String();
+
+                for(int i = 0; i < strings.length; i++)
+                {
+                    sqlstmt += strings[i] + " ";
+                }
+                // for (int i = 0; i < size; i++) {
+                //     if (i + 1 < strings.length) {
+                //         sqlstmt += strings[i + 1];
+                //     }
+                //     if (i < elements.length) {
+                //         if (elements[i].getType().pyGetName().toString() == "str")
+                //             sqlstmt += " \'" + elements[i].toString() + "\' ";
+                //         else
+                //             sqlstmt += " " + elements[i].toString() + " ";
+                //     }
+                // }
+                System.out.println(sqlstmt);
+
+                // sqlstmt = "INSERT INTO SQL_TEST (DC, OU, TEST) VALUES ( 'dummy' , 'entry' , 'check' );";
+
+                // System.out.println("sqlstmt is : " + sqlstmt);
+                CCJSqlParserManager pm = new CCJSqlParserManager();
+                net.sf.jsqlparser.statement.Statement statement = null;
+                try {
+                    statement = (net.sf.jsqlparser.statement.Statement)pm.parse(new StringReader(sqlstmt));
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+                ArrayList<PyObject> rows = new ArrayList<PyObject>();
+                sqlstmt = statement.toString();
+
+                boolean isRemote = false;
+                if (ctype.equalsIgnoreCase("remote")) isRemote = true;
+
+                if (statement instanceof CreateTable) {
+                    if (ctype.equalsIgnoreCase("remote")) {
+                        stmt.execute(sqlstmt);
+                    } else {
+                        try {
+                            net.sf.jsqlparser.statement.create.table.CreateTable caststmt =
+                                    (net.sf.jsqlparser.statement.create.table.CreateTable)statement;
+                            SQLVisitor visitor = new SQLVisitor(conn, server, uname, pword);
+                            visitor.getCreateTable(caststmt, conn);
+                        } catch (Exception e) {
+                            System.out.println(e);
+                            e.printStackTrace();
+                            PyObject[] temp = new PyObject[1];
+                            temp[0] = new PyString(e.toString());
+                            rows.add(new PyTuple(temp));
+                        }
+                    }
+                } else if (statement instanceof Insert) {
+                    if (ctype.equalsIgnoreCase("remote")) {
+                        //If connection type is remote do SQL
+                        stmt.execute(sqlstmt);
+                    } else if (ctype.equalsIgnoreCase("local")) {
+                        System.out.println("Entering local insert section.");
+                        net.sf.jsqlparser.statement.insert.Insert caststmt =
+                                (net.sf.jsqlparser.statement.insert.Insert)statement;
+                        SQLVisitor visitor = new SQLVisitor(conn, server, uname, pword);
+                        visitor.getInsert(caststmt, conn);
+                    }
+                } else if (statement instanceof Select) {
+                    try {
+                        net.sf.jsqlparser.statement.select.Select caststmt =
+                                (net.sf.jsqlparser.statement.select.Select)statement;
+                        if (ctype.equalsIgnoreCase("local")) {
+                            SQLVisitor visitor = new SQLVisitor(conn, server, uname, pword);
+                            sqlstmt = visitor.getSelect(caststmt);
+                        }
+                        runAndOutputTuples(sqlstmt, stmt);
+                    } catch (Exception e) {
+                        PyObject[] temp = new PyObject[1];
+                        temp[0] = new PyString(e.toString());
+                        rows.add(new PyTuple(temp));
+                    }
+                } else if (statement instanceof Delete) {
+
+                }
+                else if (statement instanceof Update)
+                {
+
+                } else if (statement instanceof Drop) {
+                    if (ctype.equalsIgnoreCase("remote")) {
+                        System.out.println(sqlstmt);
+                        stmt.execute(sqlstmt);
+                    } else if (ctype.equalsIgnoreCase("local")) {
+                        System.out.println("Entering local drop section.");
+                        net.sf.jsqlparser.statement.drop.Drop caststmt = (net.sf.jsqlparser.statement.drop.Drop)statement;
+                        SQLVisitor visitor = new SQLVisitor(conn, server, uname, pword);
+                        visitor.doDrop(caststmt, conn);
+                    }
+                }
+                stmt.close();
+                if (conn != null)
+                    conn.close();
+            } 
+
+            else if (mode.equals("SPARQL")) {
+                System.out.println(sqlstrings);
               this.sDoer = new SPARQLDoer(conn, uname);
 
                 sDoer.executeStatement("BEGIN \n" +
@@ -588,6 +742,8 @@ public class PyTuple extends PySequenceList implements List {
     						sqlstmt += " " + elements[i].toString() + " ";
     				}
     			}
+
+                // System.out.println("sqlstmt is : " + sqlstmt);
     			CCJSqlParserManager pm = new CCJSqlParserManager();
     			net.sf.jsqlparser.statement.Statement statement = null;
     			try {
