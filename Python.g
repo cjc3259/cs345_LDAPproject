@@ -2216,7 +2216,7 @@ sqlexpr	//catches expressions and adds, also adding current string then reseting
 	: e = expr[expr_contextType.Load]
 	{$sql_stmt::exprs.add(actions.castExpr($e.tree));$sql_stmt::strings.add($sql_stmt::temp);$sql_stmt::temp=""; }	
 	;
-	
+//===========================================================
 sparql_stmt
 scope{
 	List strings;
@@ -2248,7 +2248,57 @@ scope connection;
       	
       	)
     ;
+//===========================================================    
 
+//===========================================================
+ldap_stmt
+scope{
+  List exprs;
+  List strings;
+  String temp;
+}
+scope connection;
+@init {
+    expr etype = null;
+}
+@after {
+    if (etype != null) {
+        $ldap_stmt.tree = etype;
+    }
+}
+    :	 
+    	{
+            $ldap_stmt::exprs = new ArrayList<expr>();
+            $ldap_stmt::strings = new ArrayList<String>();
+            $ldap_stmt::temp = "";
+      	} 
+      	(	
+		  (DN COLON {$ldap_stmt::strings.add("ADD");} distinguished {$ldap_stmt::strings.add($ldap_stmt::temp);  } NEWLINE CHANGETYPE ADD NEWLINE attribute
+      	-> ^(ADD<Tuple>[$ldap_stmt.start, actions.castExprs($ldap_stmt::exprs), $expr::ctype, $ldap_stmt::strings, "LDAP"]))
+      	
+      	)
+    ;
+    fragment distinguished
+      :
+      dnfrag (COMMA dnfrag)*
+      ;
+    dnfrag
+	   :  
+      dnCl=NAME {$ldap_stmt::strings.add($dnCl.text);} ASSIGN {$ldap_stmt::strings.add(" = ");} dnName=NAME {$ldap_stmt::strings.add($dnName.text);} {$ldap_stmt::strings.add(" ");} 
+	   ;
+     attribute
+     :
+     attfrag (NEWLINE (attfrag)?)* MINUS 
+     ;
+     attfrag
+     :
+     atName=NAME {$ldap_stmt::strings.add($atName.text);} COLON {$ldap_stmt::strings.add(" : ");} atVal=NAME{$ldap_stmt::strings.add($atVal.text);} {$ldap_stmt::strings.add(" ");}
+     ;
+
+//===========================================================
+
+
+//===========================================================
 sim_stmt
 scope{
         List strings;
@@ -2855,6 +2905,12 @@ ASP_SELECT	:	'ASP_SELECT'	;
 ASP_PATH	:   'ASP_PATH'		;
 SOLVER		:	'SOLVER'	;
 //*******end of lexer rules for asp********
+
+//*******lexer rules for ldap***************
+DN			     : 	'dn'	;
+CHANGETYPE   :  'changetype';
+ADD          :  ':add';
+//*******end of lexer rules for ldap********
 
 //*** begin lexer rules for SIM ***
 
