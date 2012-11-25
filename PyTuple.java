@@ -558,15 +558,23 @@ public class PyTuple extends PySequenceList implements List {
     				runAndOutputTuples(sparql, stmt);
     		}
     		else if (mode.equals("LDAP")){
-                System.out.println("sqlstrings: " + sqlstrings);
-                String testsqlstrings = "ADD dc = com ou = check test = sejfhsdf ou : Michael email : megmailcom sfesg : mang uher : skjefisjeifjsh ;";
-                // System.out.println(elements.length);
-                // for(int i = 0; i < elements.length; i++)
-                //     {
-                //         System.out.println("elements"+ i +" "+ elements[i]);
-                //     }
-                 
-                // System.out.println(sqlstrings);
+                String[] strings = sqlstrings.split(";");
+                int size = Math.max(strings.length - 1, elements.length);
+                //Parsing the SQL statement into one string
+                String sqlstmt = strings[1];
+                for (int i = 1; i < size; i++) {
+                    if (i + 1 < strings.length) {
+                        sqlstmt += strings[i + 1];
+                    }
+                    if (i < elements.length) {
+                        if (elements[i].getType().pyGetName().toString() == "str")
+                            sqlstmt += " \'" + elements[i].toString() + "\' ";
+                        else
+                            sqlstmt += " " + elements[i].toString() + " ";
+                    }
+                }
+                sqlstmt += " ;";
+                System.out.println(sqlstmt);
                 ArrayList<String> stringList = new ArrayList<String>();
                 String[] LDAPstringsArray = testsqlstrings.split(" ");
                 ArrayList<String> LDAPstrings = new ArrayList(Arrays.asList(LDAPstringsArray));
