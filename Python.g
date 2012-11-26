@@ -2273,9 +2273,10 @@ scope connection;
             $ldap_stmt::temp = "";
       	} 
       	(	
-		  (DN COLON {$ldap_stmt::strings.add("ADD");} distinguished {$ldap_stmt::strings.add($ldap_stmt::temp);  } NEWLINE CHANGETYPE ADD NEWLINE attribute
-      	-> ^(ADD<Tuple>[$ldap_stmt.start, actions.castExprs($ldap_stmt::exprs), $expr::ctype, $ldap_stmt::strings, "LDAP"]))
-      	
+		  (DN COLON {$ldap_stmt::strings.add("ADD");} distinguished {$ldap_stmt::strings.add($ldap_stmt::temp);  } NEWLINE CHANGETYPE COLON ADD NEWLINE attribute
+      	   -> ^(ADD<Tuple>[$ldap_stmt.start, actions.castExprs($ldap_stmt::exprs), $expr::ctype, $ldap_stmt::strings, "LDAP"]))
+        |(DN COLON{$ldap_stmt::strings.add("DELETE");} distinguished {$ldap_stmt::strings.add($ldap_stmt::temp);  } NEWLINE CHANGETYPE COLON SQL_DELETE NEWLINE MINUS
+           -> ^(DELETE<Tuple>[$ldap_stmt.start, actions.castExprs($ldap_stmt::exprs), $expr::ctype, $ldap_stmt::strings, "LDAP"]))
       	)
     ;
     fragment distinguished
@@ -2292,7 +2293,7 @@ scope connection;
      ;
      attfrag
      :
-     atName=NAME {$ldap_stmt::strings.add($atName.text);} COLON {$ldap_stmt::strings.add(" : ");} atVal=NAME{$ldap_stmt::strings.add($atVal.text);} {$ldap_stmt::strings.add(" ");}
+     atName=NAME {$ldap_stmt::strings.add($atName.text);} COLON {$ldap_stmt::strings.add(" : ");} atVal=(EMAILADD | NAME){$ldap_stmt::strings.add($atVal.text);} {$ldap_stmt::strings.add(" ");}
      ;
 
 //===========================================================
@@ -2909,7 +2910,7 @@ SOLVER		:	'SOLVER'	;
 //*******lexer rules for ldap***************
 DN			     : 	'dn'	;
 CHANGETYPE   :  'changetype';
-ADD          :  ':add';
+ADD          :  'ADD';
 //*******end of lexer rules for ldap********
 
 //*** begin lexer rules for SIM ***
@@ -3151,6 +3152,9 @@ NAME:    ( 'a' .. 'z' | 'A' .. 'Z' | '_')
     ;
 
 URLLINK: URL ' ' ( 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' | COLON | AT | MINUS | DOT )+
+    ;
+
+EMAILADD:  NAME AT NAME DOT NAME
     ;
 
 /** Match various string types.  Note that greedy=false implies '''
