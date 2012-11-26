@@ -545,15 +545,7 @@ public class PyTuple extends PySequenceList implements List {
     		stmt = conn.createStatement();
     		System.out.println("Checking mode to determine which code to use.");
     		if (mode.equals("SIM")) {                                                      // SIM PROCESSING
-    			// System.out.println("sqlstrings: " + sqlstrings);
-       //          for(int i = 0; i < elements.length; i++)
-       //          {
-       //              System.out.println("elements"+ i +" "+ elements[i]);
-       //          }
-                
-                String sparql = parseSIM(elements, sqlstrings, server, uname, pword, ctype, conn);
-                // System.out.println("sparql: " + sparql);
-                // System.out.println("stmt: " + stmt);
+    			String sparql = parseSIM(elements, sqlstrings, server, uname, pword, ctype, conn);
     			if ( ! sparql.equals(""))
     				runAndOutputTuples(sparql, stmt);
     		}
@@ -561,97 +553,22 @@ public class PyTuple extends PySequenceList implements List {
                 String[] strings = sqlstrings.split(";");
                 int size = Math.max(strings.length - 1, elements.length);
                 //Parsing the SQL statement into one string
-                String ldapStmt = strings[1];
+                String sqlstmt = strings[1];
                 for (int i = 1; i < size; i++) {
                     if (i + 1 < strings.length) {
-                        ldapStmt += strings[i + 1];
+                        sqlstmt += strings[i + 1];
                     }
                     if (i < elements.length) {
                         if (elements[i].getType().pyGetName().toString() == "str")
-                            ldapStmt += " \'" + elements[i].toString() + "\' ";
+                            sqlstmt += " \'" + elements[i].toString() + "\' ";
                         else
-                            ldapStmt += " " + elements[i].toString() + " ";
+                            sqlstmt += " " + elements[i].toString() + " ";
                     }
                 }
-                ldapStmt += " ;";
-                System.out.println(ldapStmt);
-                ArrayList<String> stringList = new ArrayList<String>();
-                String[] LDAPstringsArray = ldapStmt.split(" ");
-                ArrayList<String> LDAPstrings = new ArrayList(Arrays.asList(LDAPstringsArray));
-                ArrayList<String> LDAPcolumn = new ArrayList<String>();
-                // PyObject[] LDAPelements = new PyObject[];
-                ArrayList<PyObject> LDAPvalue = new ArrayList<PyObject>();
-                // System.out.println(LDAPstrings.get(0));
-                // System.out.println(LDAPstrings.get(0).equals("ADD"));
-                
-                if(LDAPstrings.get(0).equals("ADD"))
-                {
-                    stringList.add("INSERT");
-                    stringList.add(";SQL_TEST;");
-                
-
-                    LDAPstrings.remove(0);
-
-                    while(!LDAPstrings.get(0).equals(";"))
-                    {
-                        LDAPcolumn.add(LDAPstrings.get(0));
-                        // PyString LDAPval = LDAPstrings.get(2);
-                        LDAPvalue.add(new PyString(LDAPstrings.get(2)));
-                        LDAPstrings.remove(0);
-                        LDAPstrings.remove(0);
-                        LDAPstrings.remove(0);
-                    }
-
-                    String LDAPattr = new String();
-                    for(int i = 0; i < LDAPcolumn.size() - 1; i++)
-                    {
-                        LDAPattr += "attributeToChange; " + LDAPcolumn.get(i) + "; dvaValue; ";
-                    }
-                    
-                    stringList.add(LDAPattr);
-                    
-                    stringList.add(";");
-                    // System.out.println(stringList);
-                }
-
-                
-                String[] strings = stringList.toArray(new String[stringList.size()]);
-                int size = Math.max(strings.length - 1, elements.length);
-                //Parsing the SQL statement into one string
-                String sqlstmt = new String();
-
-                for(int i = 0; i < strings.length; i++)
-                {
-                    sqlstmt += strings[i] + " ";
-                }
-
-                PyObject[] LDAPelements = new PyObject[LDAPvalue.size()];
-
-                for(int i = 0; i < LDAPvalue.size(); i++)
-                {
-                    LDAPelements[i] = LDAPvalue.get(i);
-                }
-                // for (int i = 0; i < size; i++) {
-                //     if (i + 1 < strings.length) {
-                //         sqlstmt += strings[i + 1];
-                //     }
-                //     if (i < elements.length) {
-                //         if (elements[i].getType().pyGetName().toString() == "str")
-                //             sqlstmt += " \'" + elements[i].toString() + "\' ";
-                //         else
-                //             sqlstmt += " " + elements[i].toString() + " ";
-                //     }
-                // }
+                //sqlstmt += " ;";
                 System.out.println(sqlstmt);
-
-                String sparql = parseSIM(LDAPelements, sqlstmt, server, uname, pword, ctype, conn);
-                // System.out.println("sparql: " + sparql);
-                // System.out.println("stmt: " + stmt);
-                if ( ! sparql.equals(""))
-                    runAndOutputTuples(sparql, stmt);
-            } 
-
-            else if (mode.equals("SPARQL")) {
+            }
+    		else if (mode.equals("SPARQL")) {
                 System.out.println(sqlstrings);
               this.sDoer = new SPARQLDoer(conn, uname);
 
@@ -689,8 +606,6 @@ public class PyTuple extends PySequenceList implements List {
     						sqlstmt += " " + elements[i].toString() + " ";
     				}
     			}
-
-                // System.out.println("sqlstmt is : " + sqlstmt);
     			CCJSqlParserManager pm = new CCJSqlParserManager();
     			net.sf.jsqlparser.statement.Statement statement = null;
     			try {
