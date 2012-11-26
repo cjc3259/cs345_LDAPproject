@@ -561,22 +561,22 @@ public class PyTuple extends PySequenceList implements List {
                 String[] strings = sqlstrings.split(";");
                 int size = Math.max(strings.length - 1, elements.length);
                 //Parsing the SQL statement into one string
-                String sqlstmt = strings[1];
+                String ldapStmt = strings[1];
                 for (int i = 1; i < size; i++) {
                     if (i + 1 < strings.length) {
-                        sqlstmt += strings[i + 1];
+                        ldapStmt += strings[i + 1];
                     }
                     if (i < elements.length) {
                         if (elements[i].getType().pyGetName().toString() == "str")
-                            sqlstmt += " \'" + elements[i].toString() + "\' ";
+                            ldapStmt += " \'" + elements[i].toString() + "\' ";
                         else
-                            sqlstmt += " " + elements[i].toString() + " ";
+                            ldapStmt += " " + elements[i].toString() + " ";
                     }
                 }
-                sqlstmt += " ;";
-                System.out.println(sqlstmt);
+                ldapStmt += " ;";
+                System.out.println(ldapStmt);
                 ArrayList<String> stringList = new ArrayList<String>();
-                String[] LDAPstringsArray = testsqlstrings.split(" ");
+                String[] LDAPstringsArray = ldapStmt.split(" ");
                 ArrayList<String> LDAPstrings = new ArrayList(Arrays.asList(LDAPstringsArray));
                 ArrayList<String> LDAPcolumn = new ArrayList<String>();
                 // PyObject[] LDAPelements = new PyObject[];
